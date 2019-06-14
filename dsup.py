@@ -7,48 +7,52 @@ Upload Dataset to AWS
 import boto3
 import os
 
-def validate_bucket_name(bucket_name, s3):
+def validate_bucket_name(bucket_name):
     s3t = boto3.resource('s3')
+    #check if bucket exits. If not return false
     if s3t.Bucket(bucket_name).creation_date is None:
-        print("....Bucket does NOT exist")
-        #if raw_input("Would you like to create a bucket named %s [y/n]" % bucket_name) == 'y':
-        #    create_bucket(bucket_name, s3)
-        #else:
-        #    print("Enter valid bucket name: ")
-        #    return False
-        print("Bucket does not exits, enter valid bucket name")
+        print("...Bucket does not exits, enter valid bucket name...")
         return False
     else:
+        #if exists, return true
         print("...bucket exists....")
         return True
 
-def main():
-    localDataPath = raw_input("Data Path: ") #r"/Users/Malav_Mac/Documents/Malav_Folder/TSL_Research/data_dump"
-    bucket_name = raw_input("Bucket name: ") #'trialupload1'
+def upload():
+    #input for data path
+    localDataPath = raw_input("*> Enter Data Path: ") #r"/Users/Malav_Mac/Documents/Malav_Folder/TSL_Research/data_dump"
+    #input for bucket name
+    bucket_name = raw_input("*> Enter Bucket name: ") #'trialupload1'
 
     # Create an S3 client
     s3 = boto3.client('s3')
 
-    while not validate_bucket_name(bucket_name, s3):
-        bucket_name = raw_input("Bucket name: ")
-
+    #check if bucket name valid
+    while not validate_bucket_name(bucket_name):
+        bucket_name = raw_input("*> Enter Bucket name: ")
 
     #get all files within directory
-    files =next(os.walk(localDataPath))[2]
-    print("...begining upload to %s" % bucket_name) 
-
+    try:
+        files =next(os.walk(localDataPath))[2]
+    except:
+        print("...Faulty data path. Run program again...")
+        exit()
+    print("...begining upload to %s..." % bucket_name) 
+    
+    #cound number of files
     num_files = 0
-    # Uploads the given file using a managed uploader, which will split up large
-    # files automatically and upload parts in parallel.
+    # For every file in directory
     for file in files:
+        #ignore hidden files
         if not file.startswith('.'):
+            #upload to s3
             local_file = os.path.join(localDataPath, file)
             s3.upload_file(local_file, bucket_name, file)
             num_files = num_files + 1
 
-    print("...finished uploading...%d files uploaded" % num_files)
+    print("...finished uploading...%d files uploaded..." % num_files)
 
 if __name__ == "__main__":
-    main()
+    upload()
 
 
